@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ramais das Escolas | Secretaria Municipal de Educação de Ijuí</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-950:#04182F;   /* azul quase-marinho, fundo geral */
+    --blue-900:#0A2A4E;   /* base institucional */
+    --blue-800:#0F3B6B;   /* cards */
+    --blue-700:#155089;   /* bordas / hover */
+    --blue-100:#D7E6F7;   /* texto secundário sobre azul */
+    --ice:#F3F8FF;        /* texto claro / fundo de inputs */
+    --gold:#E3A93A;       /* cor de seleção/ativo, contraste com o azul */
+    --gold-dark:#B8811E;
+    --ok:#3FAE68;
+  }
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Inter', sans-serif;
+    color:var(--ice);
+    background-color:var(--blue-950);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(21,80,137,0.55), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(227,169,58,0.12), transparent 55%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 26px);
+    background-attachment: fixed;
+  }
+  .font-display{font-family:'Space Grotesk', sans-serif;}
+
+  /* Selo/brasão decorativo do cabeçalho */
+  .stamp{
+    border:2px solid var(--gold);
+    border-radius:9999px;
+    position:relative;
+    background: radial-gradient(circle at 30% 30%, rgba(227,169,58,0.25), transparent 70%);
+  }
+  .stamp::before{
+    content:"";
+    position:absolute; inset:4px;
+    border:1px dashed rgba(227,169,58,0.5);
+    border-radius:9999px;
+  }
+
+  /* Accordion */
+  .school-panel{
+    display:grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 380ms cubic-bezier(.4,0,.2,1);
+  }
+  .school-panel.open{ grid-template-rows: 1fr; }
+  .school-panel > div{ overflow:hidden; }
+
+  .chevron{ transition: transform 320ms cubic-bezier(.4,0,.2,1); color: var(--gold); }
+  .open-chevron .chevron{ transform: rotate(180deg); }
+
+  .school-card{
+    background: linear-gradient(180deg, var(--blue-800), var(--blue-900));
+    border: 1px solid rgba(215,230,247,0.12);
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 150ms ease;
+  }
+  .school-card:hover{
+    border-color: rgba(227,169,58,0.45);
+    box-shadow: 0 6px 24px -6px rgba(0,0,0,0.5);
+  }
+  /* Card fica destacado em dourado quando expandido (selecionado) */
+  .school-card.is-open{
+    border-color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold), 0 10px 30px -8px rgba(227,169,58,0.25);
+  }
+  .school-card.is-open .school-toggle{
+    background: linear-gradient(180deg, rgba(227,169,58,0.14), transparent);
+  }
+
+  .ramal-row{
+    transition: background-color 150ms ease, border-color 150ms ease;
+    border: 1px solid rgba(215,230,247,0.10);
+  }
+  .ramal-row:hover{
+    background-color: rgba(227,169,58,0.08);
+    border-color: rgba(227,169,58,0.35);
+  }
+
+  .copy-btn{
+    transition: all 150ms ease;
+    background: rgba(243,248,255,0.06);
+    border: 1px solid rgba(215,230,247,0.25);
+    color: var(--ice);
+  }
+  .copy-btn:hover{
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--blue-950);
+  }
+  .copy-btn.copied{
+    background-color: var(--ok) !important;
+    border-color: var(--ok) !important;
+    color:#fff !important;
+  }
+
+  ::selection{ background: var(--gold); color: var(--blue-950); }
+
+  #searchInput::placeholder{ color: rgba(4,24,47,0.45); }
+
+  /* Foco visível para acessibilidade */
+  button:focus-visible, input:focus-visible{
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .school-panel, .chevron, .school-card, .copy-btn{ transition:none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ===================== CABEÇALHO ===================== -->
+  <header class="border-b border-[var(--gold)]/30 bg-[var(--blue-950)]/90 backdrop-blur sticky top-0 z-20">
+    <div class="max-w-3xl mx-auto px-5 py-5 flex items-center gap-4">
+      <div class="stamp w-14 h-14 shrink-0 flex items-center justify-center">
+        <span class="font-display font-bold text-lg leading-none text-[var(--gold)]">SME</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs tracking-[0.2em] uppercase text-[var(--gold)] font-semibold">Secretaria Municipal de Educação · Ijuí/RS</p>
+        <h1 class="font-display font-bold text-2xl sm:text-3xl leading-tight truncate text-white">Lista de Ramais das Escolas</h1>
+      </div>
+    </div>
+
+    <!-- Busca -->
+    <div class="max-w-3xl mx-auto px-5 pb-5">
+      <div class="relative">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--blue-900)]/50" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/>
+        </svg>
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="Buscar escola ou setor pelo nome..."
+          class="w-full pl-11 pr-4 py-3 rounded-lg border-2 border-transparent bg-[var(--ice)] text-[var(--blue-950)] font-medium focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:border-[var(--gold)]"
+          autocomplete="off"
+        >
+      </div>
+      <p id="resultCount" class="text-xs text-[var(--blue-100)]/70 mt-2 pl-1"></p>
+    </div>
+  </header>
+
+  <!-- ===================== LISTA DE ESCOLAS ===================== -->
+  <main class="max-w-3xl mx-auto px-5 py-6">
+    <div id="schoolList" class="flex flex-col gap-3"></div>
+
+    <!-- Estado vazio (nenhum resultado na busca) -->
+    <div id="emptyState" class="hidden text-center py-16">
+      <p class="font-display font-semibold text-lg text-white">Nenhum resultado encontrado</p>
+      <p class="text-sm text-[var(--blue-100)]/60 mt-1">Tente buscar por outro nome de escola ou setor.</p>
+    </div>
+  </main>
+
+  <footer class="max-w-3xl mx-auto px-5 pb-10 pt-4 text-xs text-[var(--blue-100)]/50 text-center">
+    Clique no nome da unidade para ver os ramais internos.
+  </footer>
+
+<script>
+/* =========================================================================
+   DADOS DAS ESCOLAS
+   -------------------------------------------------------------------------
+   Lista extraída e organizada a partir de "Ramais_Prefeitura_de_Ijuí.xlsx"
+   (faixa de ramais 4000-4122, referente à SMED e às escolas municipais).
+
+   >>> PARA ATUALIZAR: edite/adicione itens no array "schools" abaixo <<<
+   Cada unidade segue o formato:
+   {
+     name: "Nome da Escola/Setor",
+     sectors: [
+       { label: "Nome do Setor", ramal: "0000" },
+       ...
+     ]
+   }
+   Observação: alguns rótulos genéricos (ex.: "Pedagógico", "Financeiro")
+   se repetiam várias vezes na planilha original para setores diferentes;
+   foram numerados (Pedagógico, Pedagógico 2, Pedagógico 3...) para não
+   haver duplicidade visual — ajuste os nomes conforme desejar.
+   ========================================================================= */
+const schools = [
+  {
+    "name": "Secretaria Municipal de Educação (SMED)",
+    "sectors": [
+      { "label": "Telefonista", "ramal": "4000" },
+      { "label": "Pedagógico", "ramal": "4001" },
+      { "label": "Pedagógico 2", "ramal": "4002" },
+      { "label": "Pedagógico 3", "ramal": "4003" },
+      { "label": "Pedagógico 4", "ramal": "4004" },
+      { "label": "Pedagógico 5", "ramal": "4005" },
+      { "label": "Pedagógico 6", "ramal": "4006" },
+      { "label": "Informática", "ramal": "4007" },
+      { "label": "Rede de proteção", "ramal": "4008" },
+      { "label": "Rede de Proteção 2", "ramal": "4009" },
+      { "label": "Conselho Educação", "ramal": "4010" },
+      { "label": "Conselho de Educação 2", "ramal": "4011" },
+      { "label": "Engenharia", "ramal": "4012" },
+      { "label": "Engenharia 2", "ramal": "4013" },
+      { "label": "Engenharia 3", "ramal": "4014" },
+      { "label": "Engenharia 4", "ramal": "4015" },
+      { "label": "Central de Vagas", "ramal": "4016" },
+      { "label": "Central de Vagas 2", "ramal": "4017" },
+      { "label": "Financeiro", "ramal": "4018" },
+      { "label": "Administrativo", "ramal": "4019" },
+      { "label": "Recepção", "ramal": "4020" },
+      { "label": "Financeiro 2", "ramal": "4021" },
+      { "label": "Financeiro 3", "ramal": "4022" },
+      { "label": "Financeiro 4", "ramal": "4023" },
+      { "label": "Financeiro 5", "ramal": "4024" },
+      { "label": "Secretaria Adjunta", "ramal": "4025" },
+      { "label": "Secretário", "ramal": "4026" },
+      { "label": "RH", "ramal": "4027" },
+      { "label": "RH 2", "ramal": "4028" },
+      { "label": "RH 3", "ramal": "4029" },
+      { "label": "Pedagógico 7", "ramal": "4030" },
+      { "label": "Pedagógico 8", "ramal": "4031" },
+      { "label": "Pedagógico 9", "ramal": "4032" },
+      { "label": "RH 4", "ramal": "4033" },
+      { "label": "Secretaria Adjunta 2", "ramal": "4034" },
+      { "label": "Nutrição", "ramal": "4035" },
+      { "label": "Alimentação Escolar - Administrativo", "ramal": "4036" },
+      { "label": "Pedagógico 10", "ramal": "4037" },
+      { "label": "Pedagógico 11", "ramal": "4038" },
+      { "label": "Psicologia", "ramal": "4039" },
+      { "label": "Justiça Restaurativa", "ramal": "4057" },
+      { "label": "Justiça Restaurativa 2", "ramal": "4058" }
+    ]
+  },
+  {
+    "name": "IMEAB",
+    "sectors": [
+      { "label": "Secretária", "ramal": "4040" },
+      { "label": "Secretaria", "ramal": "4041" },
+      { "label": "Diretora", "ramal": "4042" },
+      { "label": "Refeitório", "ramal": "4043" },
+      { "label": "Coordenação", "ramal": "4044" },
+      { "label": "Coord. Ensino Médio", "ramal": "4045" },
+      { "label": "Orientação F2", "ramal": "4046" },
+      { "label": "Orientação F2 (2)", "ramal": "4047" },
+      { "label": "Coord. Pedagógica", "ramal": "4048" },
+      { "label": "AEE", "ramal": "4049" }
+    ]
+  },
+  {
+    "name": "Ateliê Sonare",
+    "sectors": [
+      { "label": "Recepção", "ramal": "4107" }
+    ]
+  },
+  {
+    "name": "EM Joaquim Nabuco",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4108" },
+      { "label": "Direção", "ramal": "4109" }
+    ]
+  },
+  {
+    "name": "EMEF 15 de Novembro",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4052" },
+      { "label": "Coordenação", "ramal": "4053" },
+      { "label": "Direção", "ramal": "4054" }
+    ]
+  },
+  {
+    "name": "EMEF Anita Garibaldi",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4098" },
+      { "label": "Sala Professor", "ramal": "4099" },
+      { "label": "Biblioteca", "ramal": "4100" }
+    ]
+  },
+  {
+    "name": "EMEF Davi Canabarro",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4118" },
+      { "label": "Direção", "ramal": "4119" },
+      { "label": "Biblioteca", "ramal": "4120" }
+    ]
+  },
+  {
+    "name": "EMEF Deolinda Barufaldi",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4074" },
+      { "label": "Direção", "ramal": "4075" },
+      { "label": "Vice Direção", "ramal": "4076" },
+      { "label": "Coordenação", "ramal": "4077" }
+    ]
+  },
+  {
+    "name": "EMEF Dona Leopoldina",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4111" },
+      { "label": "Direção", "ramal": "4112" },
+      { "label": "Coordenação", "ramal": "4113" }
+    ]
+  },
+  {
+    "name": "EMEF Dr. Ruy Ramos",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4093" },
+      { "label": "Secretaria (2)", "ramal": "4094" },
+      { "label": "Orientação", "ramal": "4095" },
+      { "label": "Direção", "ramal": "4096" },
+      { "label": "Coordenação", "ramal": "4097" }
+    ]
+  },
+  {
+    "name": "EMEF Estado do Amazonas",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4080" },
+      { "label": "Direção", "ramal": "4081" },
+      { "label": "Sala Professor", "ramal": "4082" }
+    ]
+  },
+  {
+    "name": "EMEF Joaquim Porto Villanova",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4062" },
+      { "label": "Coordenação", "ramal": "4064" },
+      { "label": "Direção", "ramal": "4073" }
+    ]
+  },
+  {
+    "name": "EMEF João Goulart",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4083" },
+      { "label": "Direção", "ramal": "4084" },
+      { "label": "Coordenação", "ramal": "4085" }
+    ]
+  },
+  {
+    "name": "EMEF Soares de Barros",
+    "sectors": [
+      { "label": "Justiça Restaurativa", "ramal": "4068" },
+      { "label": "Direção", "ramal": "4069" },
+      { "label": "Coord. Fundamental", "ramal": "4070" },
+      { "label": "Coord. Infantil", "ramal": "4071" },
+      { "label": "Secretaria", "ramal": "4072" }
+    ]
+  },
+  {
+    "name": "EMEF Tomé de Souza",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4090" },
+      { "label": "Direção", "ramal": "4091" },
+      { "label": "Sala dos Professores", "ramal": "4092" }
+    ]
+  },
+  {
+    "name": "EMEF Trilha do Saber",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4121" },
+      { "label": "Direção", "ramal": "4122" }
+    ]
+  },
+  {
+    "name": "EMETI Eugênio Ernesto Storch",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4101" },
+      { "label": "Coordenação", "ramal": "4102" },
+      { "label": "Direção", "ramal": "4103" }
+    ]
+  },
+  {
+    "name": "EMI Alvorada",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4086" },
+      { "label": "Direção", "ramal": "4087" }
+    ]
+  },
+  {
+    "name": "EMI Branca de Neve",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4065" },
+      { "label": "Direção", "ramal": "4066" },
+      { "label": "Secretaria (2)", "ramal": "4067" }
+    ]
+  },
+  {
+    "name": "EMI Candida Turra",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4078" },
+      { "label": "Direção", "ramal": "4079" }
+    ]
+  },
+  {
+    "name": "EMI Casa da Criança",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4114" },
+      { "label": "Direção", "ramal": "4115" }
+    ]
+  },
+  {
+    "name": "EMI Dalva de Almeida Weinmann",
+    "sectors": [
+      { "label": "Direção", "ramal": "4050" },
+      { "label": "Planejamento", "ramal": "4051" }
+    ]
+  },
+  {
+    "name": "EMI Independência",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4116" },
+      { "label": "Sala dos Professores", "ramal": "4117" }
+    ]
+  },
+  {
+    "name": "EMI Jardim das Infâncias",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4060" },
+      { "label": "Sala Professor", "ramal": "4061" }
+    ]
+  },
+  {
+    "name": "EMI Maria Barriquello",
+    "sectors": [
+      { "label": "Direção", "ramal": "4055" },
+      { "label": "Secretaria", "ramal": "4056" }
+    ]
+  },
+  {
+    "name": "EMI Meu Pequeno Mundo",
+    "sectors": [
+      { "label": "Direção", "ramal": "4059" }
+    ]
+  },
+  {
+    "name": "EMI Raios de Sol",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4104" },
+      { "label": "Direção", "ramal": "4105" },
+      { "label": "Sala dos Professores", "ramal": "4106" }
+    ]
+  },
+  {
+    "name": "EMI Solange Ana Copetti",
+    "sectors": [
+      { "label": "Secretaria", "ramal": "4088" },
+      { "label": "Secretaria (2)", "ramal": "4089" }
+    ]
+  },
+  {
+    "name": "Escola Fazenda IMEAB",
+    "sectors": [
+      { "label": "Recepção", "ramal": "4110" }
+    ]
+  }
+];
+/* ===================== FIM DA ÁREA DE DADOS ============================ */
+
+
+/* =========================================================================
+   LÓGICA DA PÁGINA (Vanilla JS)
+   ========================================================================= */
+const schoolListEl = document.getElementById('schoolList');
+const searchInput   = document.getElementById('searchInput');
+const emptyStateEl  = document.getElementById('emptyState');
+const resultCountEl = document.getElementById('resultCount');
+
+// Estado: quais escolas estão expandidas (por índice)
+const openStates = new Set();
+
+// Gera o HTML de uma linha de ramal (com botão copiar)
+function renderSectorRow(sector, schoolIdx, sectorIdx){
+  const rowId = `ramal-${schoolIdx}-${sectorIdx}`;
+  return `
+    <div class="ramal-row flex items-center justify-between gap-3 px-4 py-3 rounded-md">
+      <div class="min-w-0">
+        <p class="text-sm font-medium text-[var(--blue-100)] truncate">${sector.label}</p>
+        <p id="${rowId}" class="font-display font-bold text-lg tabular-nums text-white">${sector.ramal}</p>
+      </div>
+      <button
+        type="button"
+        class="copy-btn shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-md"
+        data-ramal="${sector.ramal}"
+        aria-label="Copiar ramal ${sector.ramal} de ${sector.label}"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+        <span class="copy-label">Copiar</span>
+      </button>
+    </div>
+  `;
+}
+
+// Gera o HTML de um card de escola
+function renderSchoolCard(school, idx){
+  const isOpen = openStates.has(idx);
+  const sectorsHtml = school.sectors.map((s, i) => renderSectorRow(s, idx, i)).join('');
+
+  return `
+    <div class="school-card rounded-xl overflow-hidden ${isOpen ? 'is-open' : ''}" data-school-idx="${idx}">
+      <button
+        type="button"
+        class="school-toggle w-full flex items-center justify-between gap-3 px-5 py-4 text-left ${isOpen ? 'open-chevron' : ''}"
+        aria-expanded="${isOpen}"
+        aria-controls="panel-${idx}"
+      >
+        <div class="min-w-0">
+          <h2 class="font-display font-semibold text-base sm:text-lg truncate text-white">${school.name}</h2>
+          <p class="text-xs text-[var(--blue-100)]/60 mt-0.5">${school.sectors.length} setor(es) cadastrado(s)</p>
+        </div>
+        <svg class="chevron w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      <div class="school-panel ${isOpen ? 'open' : ''}" id="panel-${idx}">
+        <div>
+          <div class="px-5 pb-5 pt-1 flex flex-col gap-2 border-t border-white/10">
+            ${sectorsHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Renderiza a lista completa, aplicando o filtro de busca (nome da escola OU do setor)
+function renderList(){
+  const query = searchInput.value.trim().toLowerCase();
+
+  const filtered = schools
+    .map((school, idx) => ({ school, idx }))
+    .filter(({ school }) => {
+      if (!query) return true;
+      const nameMatch = school.name.toLowerCase().includes(query);
+      const sectorMatch = school.sectors.some(s => s.label.toLowerCase().includes(query) || s.ramal.includes(query));
+      return nameMatch || sectorMatch;
+    });
+
+  resultCountEl.textContent = query
+    ? `${filtered.length} de ${schools.length} unidade(s)`
+    : `${schools.length} unidade(s) cadastrada(s)`;
+
+  if (filtered.length === 0){
+    schoolListEl.innerHTML = '';
+    emptyStateEl.classList.remove('hidden');
+    return;
+  }
+
+  emptyStateEl.classList.add('hidden');
+  schoolListEl.innerHTML = filtered
+    .map(({ school, idx }) => renderSchoolCard(school, idx))
+    .join('');
+}
+
+// Alterna abrir/fechar de uma escola
+function toggleSchool(idx){
+  if (openStates.has(idx)) openStates.delete(idx);
+  else openStates.add(idx);
+  renderList();
+}
+
+// Copia o número do ramal para a área de transferência
+async function copyRamal(button){
+  const ramal = button.getAttribute('data-ramal');
+  try {
+    await navigator.clipboard.writeText(ramal);
+  } catch (err){
+    // Fallback para navegadores/contextos sem Clipboard API
+    const textarea = document.createElement('textarea');
+    textarea.value = ramal;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  }
+
+  const label = button.querySelector('.copy-label');
+  const originalText = label.textContent;
+  button.classList.add('copied');
+  label.textContent = 'Copiado!';
+  setTimeout(() => {
+    button.classList.remove('copied');
+    label.textContent = originalText;
+  }, 1500);
+}
+
+// Delegação de eventos: clique no cabeçalho da escola OU no botão copiar
+schoolListEl.addEventListener('click', (e) => {
+  const copyBtn = e.target.closest('.copy-btn');
+  if (copyBtn){
+    copyRamal(copyBtn);
+    return;
+  }
+  const toggleBtn = e.target.closest('.school-toggle');
+  if (toggleBtn){
+    const card = toggleBtn.closest('.school-card');
+    toggleSchool(Number(card.dataset.schoolIdx));
+  }
+});
+
+// Busca instantânea
+searchInput.addEventListener('input', renderList);
+
+// Primeira renderização
+renderList();
+</script>
+
+</body>
+</html>
